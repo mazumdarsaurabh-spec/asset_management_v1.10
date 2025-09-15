@@ -1,0 +1,36 @@
+{% extends 'inventory/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Add Technical Data for {{ item.item_name }} (UID: {{ item.uid_no }})</h2>
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+            {% for field in form %}
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="text-danger">
+                            {{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+                💾 Save Technical Data
+            </button>
+            <a href="{% url 'inventory:add_item' %}?uid={{ item.uid_no }}" class="btn btn-secondary">
+                ⬅ Back to Add Item
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

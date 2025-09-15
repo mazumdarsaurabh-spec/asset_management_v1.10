@@ -1,0 +1,90 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 text-white">Review Imported Items</h5>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'inventory:save_imported_items' %}">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Serial No.</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Project</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                            <tr>
+                                <td><input type="text" name="{{ form.item_name.html_name }}" value="{{ form.item_name.value|default_if_none:'' }}" class="form-control" required></td>
+                                <td><input type="text" name="{{ form.description.html_name }}" value="{{ form.description.value|default_if_none:'' }}" class="form-control" required></td>
+                                <td><input type="number" name="{{ form.quantity.html_name }}" value="{{ form.quantity.value|default_if_none:'1' }}" class="form-control" required></td>
+                                <td><input type="text" name="{{ form.serial_number.html_name }}" value="{{ form.serial_number.value|default_if_none:'' }}" class="form-control"></td>
+                                <td>
+                                    <select name="{{ form.category.html_name }}" class="form-control" required>
+                                        <option value="">-- Select Category --</option>
+                                        {% for category in item_categories %}
+                                            <option value="{{ category.id }}" {% if category.id|stringformat:"s" == form.category.value|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="{{ form.location.html_name }}" class="form-control" required>
+                                        <option value="">-- Select Location --</option>
+                                        {% for location in locations %}
+                                            <option value="{{ location.id }}" {% if location.id|stringformat:"s" == form.location.value|stringformat:"s" %}selected{% endif %}>{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="{{ form.status.html_name }}" class="form-control" required>
+                                        <option value="">-- Select Status --</option>
+                                        {% for status in statuses %}
+                                            <option value="{{ status.id }}" {% if status.id|stringformat:"s" == form.status.value|stringformat:"s" %}selected{% endif %}>{{ status.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="{{ form.project.html_name }}" class="form-control">
+                                        <option value="">-- Select Project --</option>
+                                        {% for project in projects %}
+                                            <option value="{{ project.id }}" {% if project.id|stringformat:"s" == form.project.value|stringformat:"s" %}selected{% endif %}>{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Confirm and Save All
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

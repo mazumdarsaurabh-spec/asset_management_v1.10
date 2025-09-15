@@ -1,0 +1,198 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">{{ form_title }}</h2>
+        <div>
+            <a href="{% url 'inventory:export_all_logs_excel' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-primary mr-2">Export Filtered Logs to Excel</a>
+            {# New button for clearing all logs #}
+            <button type="button" id="clearAllLogsBtn" class="btn btn-danger">Clear All Logs</button>
+        </div>
+    </div>
+
+    {% include 'inventory/messages.html' %}
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter Logs</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{% url 'inventory:inventory_logs' %}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    {{ form.user.label_tag }}
+                    {% render_field form.user class="form-control" %}
+                </div>
+                <div class="col-md-3">
+                    {{ form.action.label_tag }}
+                    {% render_field form.action class="form-control" %}
+                </div>
+                <div class="col-md-3">
+                    {{ form.uid_number.label_tag }}
+                    {% render_field form.uid_number class="form-control" placeholder="Enter UID Number" %}
+                </div>
+                <div class="col-md-3">
+                    {{ form.item_name.label_tag }}
+                    {% render_field form.item_name class="form-control" placeholder="Enter Item Name" %}
+                </div>
+                <div class="col-md-3">
+                    {{ form.start_date.label_tag }}
+                    {% render_field form.start_date class="form-control" %}
+                </div>
+                <div class="col-md-3">
+                    {{ form.end_date.label_tag }}
+                    {% render_field form.end_date class="form-control" %}
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-info mt-4">Apply Filter</button>
+                    <a href="{% url 'inventory:inventory_logs' %}" class="btn btn-outline-secondary mt-4 ms-2">Clear Filter</a>
+                    {# New "Back to Dashboard" button #}
+                    <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary mt-4 ms-2">Back to Dashboard</a>
+                </div>
+                {% if form.errors %}
+                    <div class="col-12 mt-3">
+                        <div class="alert alert-danger mb-0">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <p class="mb-0">{{ field|capfirst }}: {{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>UID Number</th>
+                    <th>Item Name</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in page_obj %}
+                <tr>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ log.user.username|default:"System" }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.uid_number|default:"N/A" }}</td>
+                    <td>
+                        {% if log.inventory_item %}
+                            <a href="{% url 'inventory:item_details' pk_or_uid=log.inventory_item.pk %}">{{ log.inventory_item.item_name }}</a>
+                        {% else %}
+                            N/A (Item Deleted)
+                        {% endif %}
+                    </td>
+                    <td>{{ log.details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Pagination Controls #}
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% else %}
+        <p class="alert alert-info">No inventory logs found with the current filters.</p>
+    {% endif %}
+</div>
+
+{# Hidden form to ensure CSRF token is always present for AJAX POST requests #}
+<form id="csrfForm" style="display:none;">{% csrf_token %}</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const clearAllLogsBtn = document.getElementById('clearAllLogsBtn');
+
+    if (clearAllLogsBtn) {
+        clearAllLogsBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear ALL inventory logs? This action cannot be undone.')) {
+                // Get CSRF token from the hidden form
+                const csrftokenElement = document.querySelector('#csrfForm input[name=csrfmiddlewaretoken]');
+                if (!csrftokenElement) {
+                    alert('Error: CSRF token not found. Cannot proceed.');
+                    console.error('CSRF token element not found in #csrfForm.');
+                    return;
+                }
+                const tokenValue = csrftokenElement.value;
+
+                fetch('{% url "inventory:clear_all_logs" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': tokenValue,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({}) // Send an empty JSON body
+                })
+                .then(response => {
+                    // Check if the response is OK (status 200-299)
+                    if (!response.ok) {
+                        // If not OK, try to parse JSON error message or provide a generic one
+                        return response.json().then(err => {
+                            console.error('Server error response:', err);
+                            throw new Error(err.message || `Server responded with status ${response.status}`);
+                        }).catch(() => {
+                            // If JSON parsing fails, just throw a generic error
+                            throw new Error(`Network response was not ok, status: ${response.status}`);
+                        });
+                    }
+                    return response.json(); // Parse the JSON response for success/message
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload(); // Reload the page to show cleared logs
+                    } else {
+                        // If success is false, display the message from the server
+                        alert('Error: ' + (data.message || 'Failed to clear logs.'));
+                        console.error('Server reported failure:', data.message);
+                    }
+                })
+                .catch(error => {
+                    // Catch any network errors or errors thrown from the .then() block
+                    console.error('Error clearing logs:', error);
+                    alert('An error occurred: ' + error.message);
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

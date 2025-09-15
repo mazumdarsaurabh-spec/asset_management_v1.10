@@ -1,0 +1,139 @@
+{# inventory_management/inventory/templates/inventory/status_check.html #}
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm p-4 mx-auto mb-4" style="max-width: 500px;">
+    <h3 class="text-center mb-4">{{ form_title }}</h3>
+            {% include 'inventory/messages.html' %} {# Include messages partial #}
+
+            {# Conditionally display the form OR the item details #}
+            {% if not item %} {# Only show the form if no item has been found yet #}
+                <form method="POST" action="{% url 'inventory:status_check' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        {{ form.uid_no.label_tag }}
+                        {% render_field form.uid_no class="form-control" placeholder="Enter UID to check status (e.g., LAP0001)" %}
+                        {% if form.uid_no.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.uid_no.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="form-text">Enter the UID of the item to check its status.</div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-info">Check Status</button>
+                        <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    </div>
+                </form>
+            {% else %} {# If an item has been found, display its details #}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Item Name:</th>
+                                <td>{{ item.item_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">UID No.:</th>
+                                <td>{{ item.uid_no }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Serial Number:</th>
+                                <td>{{ item.serial_number|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Category:</th>
+                                <td>{{ item.get_category_display }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Quantity:</th>
+                                <td>{{ item.quantity }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Location:</th>
+                                <td>{{ item.location.name|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Project:</th>
+                                <td>{{ item.project.name|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Status:</th>
+                                <td>
+                                    <span class="badge 
+                                        {% if item.status == 'available' %}bg-success
+                                        {% elif item.status == 'assigned' %}bg-primary
+                                        {% elif item.status == 'in_repair' %}bg-warning text-dark
+                                        {% elif item.status == 'disposed' %}bg-danger
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ item.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Description:</th>
+                                <td>{{ item.description|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">CPU:</th>
+                                <td>{{ item.cpu|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">GPU:</th>
+                                <td>{{ item.gpu|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">OS:</th>
+                                <td>{{ item.os|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Installed Software:</th>
+                                <td>{{ item.installed_software|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Created At:</th>
+                                <td>{{ item.created_at|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Last Updated:</th>
+                                <td>{{ item.updated_at|date:"Y-m-d H:i:s" }}</td>
+                            </tr>
+                            {% if item.image %}
+                            <tr>
+                                <th scope="row">Image:</th>
+                                <td><img src="{{ item.image.url }}" alt="{{ item.item_name }}" class="img-fluid rounded" style="max-width: 150px;"></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    {# Add a button to go back to the dashboard #}
+                    <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    {# You might also want a button to check another item status, which would reload the form #}
+                    <a href="{% url 'inventory:status_check' %}" class="btn btn-outline-info ms-2">Check Another Item</a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{# No custom JS needed here, Bootstrap handles form submission and display based on server response #}
+{% endblock %}

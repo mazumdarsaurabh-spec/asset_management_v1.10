@@ -1,0 +1,90 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; text-align: center;">Delete Asset</h2>
+
+{% if messages %}
+    <div class="messages-container mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="row justify-content-center">
+    {# Adjust col-md-X to your desired width, e.g., col-md-6 to match status_check #}
+    <div class="col-md-6"> 
+        <div class="card shadow-sm p-4 mb-4">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="{{ form.uid_no.id_for_label }}">UID Number:</label>
+                    {% render_field form.uid_no class="form-control" placeholder="Enter UID to Delete" %}
+                    {% if form.uid_no.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.uid_no.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# QUANTITY FIELD - Ensure it's rendered #}
+                <div class="form-group">
+                    <label for="{{ form.quantity.id_for_label }}">Quantity:</label>
+                    {% render_field form.quantity class="form-control" %} {# <-- This line ensures the input field is rendered #}
+                    {% if form.quantity.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.quantity.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# REASON FOR DELETION FIELD - Ensure it's rendered #}
+                <div class="form-group">
+                    <label for="{{ form.reason_for_deletion.id_for_label }}">Reason for Deletion:</label>
+                    {% render_field form.reason_for_deletion class="form-control" rows="3" %} {# <-- This line ensures the textarea is rendered #}
+                    {% if form.reason_for_deletion.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.reason_for_deletion.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-danger">Delete Item</button>
+                    <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary ml-2">Back to Dashboard</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-5">
+    <p>&copy; 2025 Asset Management Tool</p>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageContainers = document.querySelectorAll('.alert');
+        messageContainers.forEach(container => {
+            setTimeout(() => {
+                if (typeof jQuery !== 'undefined' && typeof jQuery.fn.alert !== 'undefined') {
+                    $(container).alert('close');
+                } else {
+                    container.style.display = 'none';
+                }
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}

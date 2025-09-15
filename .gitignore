@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Django specific
+*.log
+*.pot
+*.mo
+# Ensure db.sqlite3 is listed if you're using SQLite locally:
+db.sqlite3
+# Important: Don't commit user-uploaded media files directly
+media/
+# Important: Don't commit collected static files directly
+staticfiles/
+
+# Operating System files
+.DS_Store
+.env
+.vscode/ # If you use VS Code, you might want to ignore its config

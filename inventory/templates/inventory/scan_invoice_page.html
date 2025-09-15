@@ -1,0 +1,251 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+  <!-- Upload Form (scan invoice) -->
+  
+<form method="POST" enctype="multipart/form-data" action="{% url 'inventory:ocr_scan' %}">
+  {% csrf_token %}
+  <div class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label for="invoice_file" class="form-label">Invoice</label>
+      <input type="file" name="invoice_file" id="invoice_file" class="form-control">
+    </div>
+    <div class="col-auto" style="display:none;">
+      <label for="invoice" class="form-label">Invoice</label>
+      <input type="text" name="invoice" id="invoice" class="form-control" placeholder="Enter Invoice No (optional)">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-success">Scan Now</button>
+    </div>
+  </div>
+</form>
+
+  
+
+  <hr class="my-3">
+
+  <!-- Save form: includes invoice number + scanned rows -->
+  <form method="POST" action="{% url 'inventory:add_items_from_invoice' %}" id="save-scanned-form">
+    {% csrf_token %}
+    <!-- ✅ Only one invoice number input -->
+    <div class="mb-2">
+      <label for="invoice_number" class="form-label">Invoice / Quote / Bill Number</label>
+      <input type="text" name="invoice_number" id="invoice_number"
+             value="{{ invoice_number|default:'' }}" class="form-control w-25">
+      <small class="form-text text-muted">Common for all line items</small>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle w-100" id="scanned-items-table">
+        <thead class="thead-dark">
+          <tr>
+            <th style="min-width:180px;">Item Name</th>
+            <th style="min-width:300px;">Description</th>
+            <th style="min-width:100px;">Quantity</th>
+            <th style="min-width:120px;">Unit Price</th>
+            <th style="min-width:120px;">Total Price</th>
+            <th style="min-width:150px;">Serial Number</th>
+            <th style="min-width:200px;">Category</th>
+            <th style="min-width:200px;">Status</th>
+            <th style="min-width:200px;">Location</th>
+            <th style="min-width:140px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if scanned_items %}
+            {% for item in scanned_items %}
+              <tr data-index="{{ forloop.counter0 }}">
+                <td><input name="items[{{ forloop.counter0 }}][item_name]" type="text" value="{{ item.item_name }}" class="form-control form-control-sm"></td>
+                <td><input name="items[{{ forloop.counter0 }}][description]" type="text" value="{{ item.description }}" class="form-control form-control-sm"></td>
+                <td><input name="items[{{ forloop.counter0 }}][quantity]" type="number" value="{{ item.quantity }}" class="form-control form-control-sm qty-input"></td>
+                <td><input name="items[{{ forloop.counter0 }}][unit_price]" type="number" step="0.01" value="{{ item.unit_price }}" class="form-control form-control-sm unit-input"></td>
+                <td><input name="items[{{ forloop.counter0 }}][total_price]" type="number" step="0.01" value="{{ item.total_price }}" class="form-control form-control-sm total-input"></td>
+                <td><input name="items[{{ forloop.counter0 }}][serial_number]" type="text" value="{{ item.serial_number }}" class="form-control form-control-sm"></td>
+
+                <!-- Category dropdown -->
+                <td>
+                  <select name="items[{{ forloop.counter0 }}][category_id]" class="form-select form-select-sm" style="min-width:200px;">
+                    {% for cat in item_categories %}
+                      <option value="{{ cat.id }}" {% if item.category == cat.name %}selected{% endif %}>
+                        {{ cat.name }}
+                      </option>
+                    {% endfor %}
+                    <option value="other" {% if item.category == "Other" %}selected{% endif %}>Other</option>
+                  </select>
+                </td>
+
+                <!-- Status dropdown -->
+                <td>
+                  <select name="items[{{ forloop.counter0 }}][status]" class="form-select form-select-sm" style="min-width:200px;">
+                    {% for val,label in status_choices %}
+                      <option value="{{ val }}" {% if item.status == val or item.status == label %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+
+                <!-- Location dropdown -->
+                <td>
+                  <select name="items[{{ forloop.counter0 }}][location_id]" class="form-select form-select-sm" style="min-width:200px;">
+                    <option value="">-- Select --</option>
+                    {% for loc in locations %}
+                      <option value="{{ loc.id }}" {% if item.location == loc.name %}selected{% endif %}>{{ loc.name }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+
+                <!-- Action Button -->
+                <td class="text-center">
+                  <button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr data-index="0">
+              <td><input name="items[0][item_name]" type="text" class="form-control form-control-sm"></td>
+              <td><input name="items[0][description]" type="text" class="form-control form-control-sm"></td>
+              <td><input name="items[0][quantity]" type="number" value="1" class="form-control form-control-sm qty-input"></td>
+              <td><input name="items[0][unit_price]" type="number" step="0.01" class="form-control form-control-sm unit-input"></td>
+              <td><input name="items[0][total_price]" type="number" step="0.01" class="form-control form-control-sm total-input"></td>
+              <td><input name="items[0][serial_number]" type="text" class="form-control form-control-sm"></td>
+              <td>
+                <select name="items[0][category_id]" class="form-select form-select-sm" style="min-width:200px;">
+                  {% for cat in item_categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                  {% endfor %}
+                  <option value="other">Other</option>
+                </select>
+              </td>
+              <td>
+                <select name="items[0][status]" class="form-select form-select-sm" style="min-width:200px;">
+                  {% for val,label in status_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <select name="items[0][location_id]" class="form-select form-select-sm" style="min-width:200px;">
+                  <option value="">-- Select --</option>
+                  {% for loc in locations %}
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+
+        <tfoot>
+          <tr>
+            <td colspan="4" class="text-end"><strong>Total Estimated Value:</strong></td>
+            <td colspan="6">
+              <input id="total_estimated" name="total_estimated" type="text" readonly class="form-control" value="{{ total_estimated|default:'0.00' }}">
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between my-3">
+      <div>
+        <button id="add-row-btn" type="button" class="btn btn-outline-secondary">Add Row</button>
+      </div>
+      <div>
+        <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary mr-2">Back to Dashboard</a>
+        <button type="submit" class="btn btn-success">Save Scanned Items</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- JS: remove row + recalc totals + add row -->
+<script>
+(function() {
+  function parseNumber(v){
+    if(!v) return 0;
+    v = String(v).replace(/,/g, '');
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function recalcTotals(){
+    let total = 0;
+    document.querySelectorAll("#scanned-items-table tbody tr").forEach(row => {
+      let qty = parseNumber(row.querySelector(".qty-input")?.value);
+      let unit = parseNumber(row.querySelector(".unit-input")?.value);
+      let totInput = row.querySelector(".total-input");
+      let tot = parseNumber(totInput?.value);
+      if (!tot && qty && unit) {
+        tot = qty * unit;
+        if (totInput) totInput.value = tot.toFixed(2);
+      }
+      total += tot;
+    });
+    document.getElementById("total_estimated").value = total.toFixed(2);
+  }
+
+  document.addEventListener("click", function(e){
+    if (e.target.classList.contains("remove-row-btn")){
+      e.target.closest("tr").remove();
+      recalcTotals();
+    }
+  });
+
+  document.addEventListener("input", function(e){
+    if (e.target.classList.contains("qty-input") ||
+        e.target.classList.contains("unit-input") ||
+        e.target.classList.contains("total-input")){
+      recalcTotals();
+    }
+  });
+
+  document.getElementById("add-row-btn").addEventListener("click", function(){
+    let tbody = document.querySelector("#scanned-items-table tbody");
+    let idx = tbody.querySelectorAll("tr").length;
+    let newRow = document.createElement("tr");
+    newRow.dataset.index = idx;
+    newRow.innerHTML = `
+      <td><input name="items[${idx}][item_name]" type="text" class="form-control form-control-sm"></td>
+      <td><input name="items[${idx}][description]" type="text" class="form-control form-control-sm"></td>
+      <td><input name="items[${idx}][quantity]" type="number" value="1" class="form-control form-control-sm qty-input"></td>
+      <td><input name="items[${idx}][unit_price]" type="number" step="0.01" class="form-control form-control-sm unit-input"></td>
+      <td><input name="items[${idx}][total_price]" type="number" step="0.01" class="form-control form-control-sm total-input"></td>
+      <td><input name="items[${idx}][serial_number]" type="text" class="form-control form-control-sm"></td>
+      <td>
+        <select name="items[${idx}][category_id]" class="form-select form-select-sm" style="min-width:200px;">
+          {% for cat in item_categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+          <option value="other">Other</option>
+        </select>
+      </td>
+      <td>
+        <select name="items[${idx}][status]" class="form-select form-select-sm" style="min-width:200px;">
+          {% for val,label in status_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td>
+        <select name="items[${idx}][location_id]" class="form-select form-select-sm" style="min-width:200px;">
+          <option value="">-- Select --</option>
+          {% for loc in locations %}
+            <option value="{{ loc.id }}">{{ loc.name }}</option>
+          {% endfor %}
+        </select>
+      </td>
+      <td class="text-center"><button type="button" class="btn btn-danger btn-sm remove-row-btn">Remove</button></td>
+    `;
+    tbody.appendChild(newRow);
+    recalcTotals();
+  });
+
+  recalcTotals();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 text-white">Import Items from Excel/CSV</h5>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form id="import-form" action="{% url 'inventory:import_items_submit' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_file" class="form-label">Upload Excel or CSV File</label>
+                    <input type="file" class="form-control" id="id_file" name="file" required accept=".xls,.xlsx,.csv">
+                </div>
+                <button type="submit" class="btn btn-primary" id="import-button">
+                    <i class="fas fa-upload me-1"></i> Import
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelector('#import-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const importButton = document.getElementById('import-button');
+
+        importButton.disabled = true;
+        importButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Importing...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': form.querySelector('[name="csrfmiddlewaretoken"]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || 'Server error occurred.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert("Import failed: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert("An unexpected error occurred: " + error.message);
+        })
+        .finally(() => {
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-upload me-1"></i> Import';
+        });
+    });
+</script>
+{% endblock %}

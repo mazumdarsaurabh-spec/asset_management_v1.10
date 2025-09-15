@@ -1,0 +1,133 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f7fa;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background-color: #333;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 1em;
+}
+
+.header a {
+    color: white;
+    margin: 0 10px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.header a:hover {
+    text-decoration: underline;
+}
+
+.left-buttons, .right-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.main-content {
+    padding: 2em;
+}
+
+/* New or modified rule for the button container */
+/* Assuming you've added a class 'dashboard-actions' to the div holding your buttons */
+.dashboard-actions {
+    margin-bottom: 20px; /* Adjust this value to control the space below the buttons */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0; /* Set this to 0 or a very small value to reduce gap from table's top margin */
+    background: white;
+}
+
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+footer {
+    text-align: center;
+    padding: 1em;
+    background-color: #eee;
+    margin-top: 2em;
+}
+
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* This rule might be causing some space. If using .dashboard-actions, you might adjust or remove this. */
+.button-group {
+    margin: 10px 0; /* Consider reducing this or if using .dashboard-actions for button grouping, this might become redundant. */
+}
+
+.button-group a button {
+    margin-right: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 12px;
+    margin-right: 10px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+/* inventory_management/static/css/style.css (or wherever your main CSS is) */
+
+.document-link {
+    /* Basic styling for the link/icon */
+    text-decoration: none; /* Remove underline from link */
+    color: #007bff; /* Default blue for links (Bootstrap primary) */
+    font-weight: bold;
+    display: inline-flex; /* To align icon and text */
+    align-items: center;
+    gap: 5px; /* Space between icon and text */
+}
+
+.document-link:hover {
+    text-decoration: underline;
+}
+
+/* Style for items with documents (pale green) */
+.document-link.has-documents {
+    color: #90EE90; /* Pale Green */
+    /* You might want a slightly different hover effect */
+    /* text-shadow: 0 0 5px rgba(144, 238, 144, 0.5); */
+}
+
+/* Style for items with no documents (default folder color, e.g., gray or a specific blue/brown) */
+.document-link.no-documents {
+    color: #6c757d; /* Bootstrap secondary gray for default/no-documents */
+    /* Or a more traditional folder color, e.g., #B8860B (DarkGoldenRod) */
+}

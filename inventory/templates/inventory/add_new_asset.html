@@ -1,0 +1,313 @@
+{% load static %}
+{% load widget_tweaks %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Asset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">Add New Asset</h2>
+            <button id="scan-button" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-150 ease-in-out">
+                Scan Invoice
+            </button>
+        </div>
+
+        <form method="post" id="asset-form" action="" class="space-y-4" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="flex flex-col space-y-4">
+
+                <div class="flex flex-col">
+                    <label for="{{ form.invoice_number.id_for_label }}" class="block text-sm font-medium text-gray-700">Invoice Number:</label>
+                    {% render_field form.invoice_number class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+
+
+                <div class="flex flex-col">
+                    <label for="id_item_name" class="block text-sm font-medium text-gray-700">Item name:</label>
+                    {% render_field form.item_name class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_category" class="block text-sm font-medium text-gray-700">Category:</label>
+                    {% render_field form.category class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_serial_number" class="block text-sm font-medium text-gray-700">Serial number:</label>
+                    {% render_field form.serial_number class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_quantity" class="block text-sm font-medium text-gray-700">Quantity:</label>
+                    {% render_field form.quantity class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_location" class="block text-sm font-medium text-gray-700">Location:</label>
+                    {% render_field form.location class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_status" class="block text-sm font-medium text-gray-700">Status:</label>
+                    {% render_field form.status class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_description" class="block text-sm font-medium text-gray-700">Description:</label>
+                    {% render_field form.description class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_project" class="block text-sm font-medium text-gray-700">Project:</label>
+                    {% render_field form.project class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_tag" class="block text-sm font-medium text-gray-700">TAG:</label>
+                    {% render_field form.tag class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out" %}
+                </div>
+            </div>
+
+            <div id="technical-fields-container" class="space-y-4" style="display: none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="flex flex-col">
+                        <label for="id_cpu" class="block text-sm font-medium text-gray-700">CPU:</label>
+                        <input type="text" id="id_cpu" name="cpu" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="id_gpu" class="block text-sm font-medium text-gray-700">GPU:</label>
+                        <input type="text" id="id_gpu" name="gpu" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="id_operating_software" class="block text-sm font-medium text-gray-700">Operating Software:</label>
+                        <input type="text" id="id_operating_software" name="operating_software" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="id_installation_software" class="block text-sm font-medium text-gray-700">Installation Software:</label>
+                        <input type="text" id="id_installation_software" name="installation_software" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col mt-4">
+                <label for="id_image" class="block text-sm font-medium text-gray-700">Upload Image:</label>
+                {% render_field form.image class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %}
+            </div>
+            <div class="flex flex-col mt-2">
+                <label for="id_document_view" class="block text-sm font-medium text-gray-700">Upload Document:</label>
+                <input type="file" id="id_document_view" name="document" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            </div>
+
+            <div class="flex justify-start space-x-4 mt-6">
+                <button type="submit" id="data-button" class="px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Add Item
+                </button>
+                <button type="button" onclick="window.location.href='{% url 'inventory:dashboard' %}'" class="px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Back to Dashboard
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="scanInvoiceModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Scan Invoice</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="flex space-x-4 mb-4">
+                <button id="upload-file-button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-150 ease-in-out">
+                    Upload File
+                </button>
+                <button id="take-photo-button" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150 ease-in-out">
+                    Take Photo
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                <div class="flex flex-col">
+                    <label for="id_modal_category" class="block text-sm font-medium text-gray-700">Category:</label>
+                    <select id="id_modal_category" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                        {% for choice in form.category.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_modal_project" class="block text-sm font-medium text-gray-700">Project ID:</label>
+                    <select id="id_modal_project" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                        {% for choice in form.project.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_modal_tag" class="block text-sm font-medium text-gray-700">TAG:</label>
+                    <select id="id_modal_tag" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out">
+                        {% for choice in form.tag.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_modal_image" class="block text-sm font-medium text-gray-700">Upload Image:</label>
+                    <input type="file" id="id_modal_image" name="modal_image" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <div class="flex flex-col">
+                    <label for="id_modal_document" class="block text-sm font-medium text-gray-700">Upload Document:</label>
+                    <input type="file" id="id_modal_document" name="modal_document" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+            </div>
+
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow overflow-hidden">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-2 px-4 border-b">Item Name</th>
+                        <th class="py-2 px-4 border-b">Quantity</th>
+                        <th class="py-2 px-4 border-b">Description</th>
+                        <th class="py-2 px-4 border-b">Unit Price</th>
+                        <th class="py-2 px-4 border-b">Serial Number</th>
+                    </tr>
+                </thead>
+                <tbody id="scanned-items-table-body">
+                    </tbody>
+            </table>
+            
+            <div class="flex justify-end space-x-4 mt-4">
+                <button id="save-items-button" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save Items</button>
+                <button id="close-modal-footer" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('asset-form');
+        const submitButton = document.getElementById('data-button');
+        form.addEventListener('submit', () => {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Adding...';
+            submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+
+        const scanButton = document.getElementById('scan-button');
+        const modal = document.getElementById('scanInvoiceModal');
+        const closeModalButtons = document.querySelectorAll('#close-modal, #close-modal-footer');
+        const uploadFileButton = document.getElementById('upload-file-button');
+        const scannedItemsTableBody = document.getElementById('scanned-items-table-body');
+        const categoryDropdown = document.getElementById('id_category');
+        const technicalFields = document.getElementById('technical-fields-container');
+        
+        function toggleTechnicalFields() {
+            const selectedCategory = categoryDropdown.options[categoryDropdown.selectedIndex].text;
+            const categoriesToShowFields = ['Laptop', 'Desktop', 'Server', 'Docking Station'];
+            if (categoriesToShowFields.includes(selectedCategory)) {
+                technicalFields.style.display = 'block';
+            } else {
+                technicalFields.style.display = 'none';
+            }
+        }
+        
+        categoryDropdown.addEventListener('change', toggleTechnicalFields);
+        window.addEventListener('load', toggleTechnicalFields);
+
+        scanButton.onclick = function() {
+            modal.style.display = "flex";
+        }
+
+        closeModalButtons.forEach(button => {
+            button.onclick = function() {
+                modal.style.display = "none";
+            }
+        });
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+        
+        uploadFileButton.onclick = function() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,application/pdf';
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('invoice_file', file);
+                
+                try {
+                    const response = await fetch('/inventory/ocr_scan/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        populateTable(result.items);
+                    } else {
+                        alert(result.error);
+                    }
+                } catch (error) {
+                    alert('An error occurred during scanning.');
+                    console.error('Error:', error);
+                }
+            };
+            fileInput.click();
+        }
+
+        function populateTable(items) {
+            scannedItemsTableBody.innerHTML = '';
+            if (items.length === 0) {
+                scannedItemsTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No items were found.</td></tr>';
+                return;
+            }
+            items.forEach(item => {
+                const row = `
+                    <tr>
+                        <td class="py-2 px-4 border-b">${item.name || ''}</td>
+                        <td class="py-2 px-4 border-b">${item.quantity || ''}</td>
+                        <td class="py-2 px-4 border-b">${item.description || ''}</td>
+                        <td class="py-2 px-4 border-b">${item.pricePerUnit || ''}</td>
+                        <td class="py-2 px-4 border-b">${item.serialNumber || ''}</td>
+                    </tr>
+                `;
+                scannedItemsTableBody.innerHTML += row;
+            });
+        }
+    </script>
+</body>
+</html>

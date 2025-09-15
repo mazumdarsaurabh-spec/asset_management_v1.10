@@ -1,0 +1,42 @@
+<form method="POST">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label>Invoice Number</label>
+      {{ form.invoice_number }}
+      {{ form.invoice_number.errors }}
+    </div>
+  
+    <div class="form-group">
+      <label>Category</label>
+      {{ form.category }}
+      {{ form.category.errors }}
+    </div>
+  
+    <div class="form-group">
+      <label>Serial Number</label>
+      {{ form.serial_number }}
+      {{ form.serial_number.errors }}
+    </div>
+  
+    <div class="form-group">
+      <label>Location</label>
+      {{ form.location }}
+      {{ form.location.errors }}
+    </div>
+  
+    <div class="form-group">
+      <label>Status</label>
+      {{ form.status }}
+      {{ form.status.errors }}
+    </div>
+  
+    <div class="form-group">
+      <label>Project</label>
+      {{ form.project }}
+      {{ form.project.errors }}
+    </div>
+  
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+  

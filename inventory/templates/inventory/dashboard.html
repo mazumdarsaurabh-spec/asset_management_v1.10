@@ -1,0 +1,914 @@
+{% extends "inventory/base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}Inventory Dashboard{% endblock %}
+
+{% block content %}
+<style>
+ /* Custom styles for the top navigation bar */
+ .navbar-custom {
+        background-color: #008080 !important; /* The dark teal color you requested */
+    }
+    .navbar-brand img {
+        height: 48px; /* Larger logo size */
+        width: 48px;
+        border-radius: 50%;
+        margin-right: 0.75rem;
+    }
+    .navbar-brand h4 {
+        color: white; /* Make the text more visible against the dark background */
+        font-weight: bold;
+    }
+
+
+    .kit-badge {
+        background-color: #800080; /* Purple color */
+        color: white;
+        padding: 0.25em 0.6em;
+        border-radius: 1rem;
+        font-size: 0.75em;
+        font-weight: bold;
+        vertical-align: middle;
+        margin-left: 0.5rem;
+    }
+
+    /* Highlighted row when search matches */
+    .highlight-row {
+        background-color: #fff3bf !important; /* soft yellow highlight */
+    }
+    
+ 
+
+
+</style>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex" style="gap: 0.5rem;">
+            <a href="{% url 'inventory:add_item' %}" class="btn btn-primary">Add New Asset</a>
+
+            <!-- Remove data-toggle/data-target here: we'll open modal via JS so we can populate it reliably -->
+            <button type="button" id="deleteAssetBtn" class="btn btn-danger" disabled>
+                Delete Asset
+            </button>
+
+            <button type="button" id="modifyAssetBtn" class="btn btn-info" disabled>Modify Asset</button>
+            <button type="button" class="btn btn-success" id="exportExcelBtn" disabled>Export to Excel</button>
+            <button type="button" id="openTransferModalBtn" data-toggle="modal" data-target="#transferModal" class="btn btn-secondary" disabled>Transfer Asset</button>
+
+            <div class="dropdown">
+                <button class="btn btn-success dropdown-toggle" type="button" id="importDropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Import
+                </button>
+                <div class="dropdown-menu" aria-labelledby="importDropdownMenu">
+                    <a class="dropdown-item" href="#" data-file-type="xls">.xls</a>
+                    <a class="dropdown-item" href="#" data-file-type="csv">.csv</a>
+                </div>
+            </div>
+
+            <a href="#" class="btn btn-dark">Technical Data</a>
+        </div>
+
+        <form method="get" action="{% url 'inventory:dashboard' %}" class="form-inline ml-auto" id="searchForm">
+            <div class="input-group mr-2" style="max-width: 250px;">
+                {# Keep your existing render_field but JS will ensure proper name/id for it so server receives 'search' #}
+                {% render_field filter_form.search class="form-control" placeholder="Search..." %}
+            </div>
+
+            <div class="input-group" style="width: 80px;">
+                <select name="page_size" id="pageSize" class="form-control form-control-sm" onchange="this.form.submit();">
+                    {% for size in page_sizes %}
+                    <option value="{{ size }}" {% if size == page_size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle table-bordered">
+            <thead style="background-color: #e9ecef;">
+                <tr>
+                    <th><input type="checkbox" id="selectAll"></th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=item_name&direction={% if sort == 'item_name' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Item Name
+                            {% if sort == 'item_name' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=uid_no&direction={% if sort == 'uid_no' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            UID No
+                            {% if sort == 'uid_no' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=serial_number&direction={% if sort == 'serial_number' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Serial Number
+                            {% if sort == 'serial_number' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=quantity&direction={% if sort == 'quantity' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Quantity
+                            {% if sort == 'quantity' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=location__name&direction={% if sort == 'location__name' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Location
+                            {% if sort == 'location__name' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=status&direction={% if sort == 'status' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Status
+                            {% if sort == 'status' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="{% url 'inventory:dashboard' %}?sort=description&direction={% if sort == 'description' and direction == 'asc' %}desc{% else %}asc{% endif %}&page_size={{ page_size }}" class="text-dark text-decoration-none">
+                            Description
+                            {% if sort == 'description' %}{% if direction == 'asc' %}<i class="fas fa-sort-up ml-1"></i>{% else %}<i class="fas fa-sort-down ml-1"></i>{% endif %}{% else %}<i class="fas fa-sort ml-1" style="opacity: 0.5%;"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">Documents</th>
+                    <th scope="col">Image</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_obj %}
+                    <tr data-item-id="{{ item.id }}"
+                        data-item-name="{{ item.item_name|default:'N/A' }}"
+                        data-serial-number="{{ item.serial_number|default:'N/A' }}"
+                        data-current-location="{{ item.location.name|default:'N/A' }}"
+                        data-current-location-id="{{ item.location.id|default:'' }}"
+                        data-current-project-id="{{ item.project.id|default:'' }}"
+                        data-uid="{{ item.uid_no|default:'N/A' }}"
+                        data-current-owner-id="{{ item.owner.id|default:'' }}">
+                        <td><input type="checkbox" class="select-item" value="{{ item.id }}"></td>
+                        <td><a href="{% url 'inventory:item_details' pk_or_uid=item.pk %}" class="text-decoration-none text-info font-weight-bold">
+                            {{ item.item_name|default:'N/A' }}
+                            {% if item.is_in_kit %}
+                                <span class="kit-badge">C</span>
+                            {% endif %}
+                        </a></td>
+                        <td>{{ item.uid_no|default:'N/A' }}</td>
+                        <td>{{ item.serial_number|default:'N/A' }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.location.name }}</td>
+                        <td>
+                            {{ item.get_status_display }}
+                        </td>
+                        <td>{{ item.description }}</td>
+                        <td class="text-center">
+                            {# Use count to check presence (# only show folder icon when count > 0) #}
+                            {% if item.documents.count %}
+                                <a href="{% url 'inventory:item_documents' item_id=item.id %}" class="d-inline-flex flex-column align-items-center justify-content-center text-decoration-none text-dark" title="View Documents" style="padding: 5px;">
+                                    <i class="fas fa-folder fa-lg" style="color: #8BC34A; font-size: 40px;"></i>
+                                    <small>({{ item.documents.count }})</small>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'inventory:item_documents' item_id=item.id %}" class="d-inline-flex flex-column align-items-center justify-content-center text-decoration-none text-dark" title="Add Documents" style="padding: 5px;">
+                                    <i class="fas fa-folder-plus fa-lg" style="color: #FFC107; font-size: 40px%;"></i>
+                                    <small>(0)</small>
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}"
+                                        alt="{{ item.item_name }}"
+                                        class="img-thumbnail"
+                                        style="width: 50px; height: 50px; object-fit: cover;"
+                                        onerror="this.onerror=null;this.src='{% static "images/default_inventory.png" %}';">
+                            {% else %}
+                                <img src="{% static 'images/default_inventory.png' %}"
+                                        alt="No Image"
+                                        class="img-thumbnail"
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="10" class="text-center py-4">No inventory items found. Please add new assets or adjust your filters.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Pagination Controls #}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1&page_size={{ page_size }}&sort={{ sort }}&direction={{ direction }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.item_name %}&item_name={{ request.GET.item_name }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}">First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&page_size={{ page_size }}&sort={{ sort }}&direction={{ direction }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.item_name %}&item_name={{ request.GET.item_name }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}">Previous</a></li>
+            {% endif %}
+
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}&page_size={{ page_size }}&sort={{ sort }}&direction={{ direction }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.item_name %}&item_name={{ request.GET.item_name }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&page_size={{ page_size }}&sort={{ sort }}&direction={{ direction }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.item_name %}&item_name={{ request.GET.item_name }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&page_size={{ page_size }}&sort={{ sort }}&direction={{ direction }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.item_name %}&item_name={{ request.GET.item_name }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.project %}&project={{ request.GET.project }}{% endif %}">Last</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {# Display total item count at the bottom #}
+    <div class="text-center mt-3">
+        <p class="h5">Total Inventory Items: <span class="badge badge-primary">{{ total_item_count }}</span></p>
+    </div>
+
+    {# Transfer Modal #}
+    <div class="modal fade" id="transferModal" tabindex="-1" role="dialog" aria-labelledby="transferModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">   <!-- ✅ original setup -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transferModalLabel">Transfer Selected Assets</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="transferFormModal" method="post">
+                        {% csrf_token %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>UID No</th>
+                                        <th>Serial Number</th>
+                                        <th>Current Location</th>
+                                        <th>New Location</th>
+                                        <th>Project</th>
+                                        <th>Owner</th>
+                                        <th>Destination POC</th>
+                                        <th>Est ETA</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transferItemsBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="confirmTransferBtn">Confirm Transfer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    {# Batch Delete Confirmation Modal #}
+    <div class="modal fade" id="deleteBatchModal" tabindex="-1" role="dialog" aria-labelledby="deleteBatchModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBatchModalLabel">Delete Selected Assets</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="deleteBatchFormModal" method="post" action="{% url 'inventory:delete_items_confirm' %}">
+                        {% csrf_token %}
+
+                        <div id="selected_item_ids_container"></div>
+
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered table-sm">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>UID Number</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deleteItemsBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="id_reason">Reason for Deletion/Reduction:</label>
+                            <textarea name="reason" id="id_reason" class="form-control" rows="3" placeholder="e.g., Decommissioned, Lost, Damaged beyond repair" required></textarea>
+                            <div class="invalid-feedback">Please provide a reason for deletion.</div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBatchBtn">Confirm Delete</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Import Modal #}
+    <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Import Assets from File</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="file_type" id="importFileType">
+                        <div class="form-group">
+                            <label for="fileUpload">Choose file to upload:</label>
+                            <input type="file" class="form-control-file" id="fileUpload" name="file" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="uploadFileBtn">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Custom Confirmation Modal HTML (for replacing native confirm/alert) #}
+    <div class="modal fade" id="customConfirmModal" tabindex="-1" role="dialog" aria-labelledby="customConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customConfirmModalLabel">Confirmation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="customConfirmModalBody">
+                    Are you sure?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="customConfirmOkBtn">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script id="location_data" type="application/json">{{ locations_json|safe }}</script>
+<script id="project_data" type="application/json">{{ projects_json|safe }}</script>
+<script id="user_data" type="application/json">{{ users_json|safe }}</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const deleteAssetBtn = document.getElementById('deleteAssetBtn');
+    const modifyAssetBtn = document.getElementById('modifyAssetBtn');
+    const openTransferModalBtn = document.getElementById('openTransferModalBtn');
+    const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+    // Delete Modal Elements
+    const deleteBatchModalElement = document.getElementById('deleteBatchModal');
+    const deleteItemsBody = document.getElementById('deleteItemsBody');
+    const confirmDeleteBatchBtn = document.getElementById('confirmDeleteBatchBtn');
+    const deleteBatchFormModal = document.getElementById('deleteBatchFormModal');
+
+    // Custom Confirmation Modal
+    const customConfirmModalElement = document.getElementById('customConfirmModal');
+    let bsCustomConfirmModal = null;
+    if (customConfirmModalElement) {
+        bsCustomConfirmModal = new bootstrap.Modal(customConfirmModalElement);
+    }
+
+    // Helper: enable/disable action buttons based on selected items (use live query so it always reflects current state)
+    function updateButtonStates() {
+        const checkedCount = document.querySelectorAll('.select-item:checked').length;
+        // Ensure buttons are visible
+        if (deleteAssetBtn) deleteAssetBtn.style.display = '';
+        if (modifyAssetBtn) modifyAssetBtn.style.display = '';
+
+        if (deleteAssetBtn) deleteAssetBtn.disabled = checkedCount === 0;
+        if (openTransferModalBtn) openTransferModalBtn.disabled = checkedCount === 0;
+        if (modifyAssetBtn) modifyAssetBtn.disabled = checkedCount !== 1;
+        if (exportExcelBtn) exportExcelBtn.disabled = checkedCount === 0;
+    }
+
+    // "Select All" behavior
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const all = document.querySelectorAll('.select-item');
+            all.forEach(cb => cb.checked = this.checked);
+            updateButtonStates();
+        });
+    }
+
+    // Use event delegation for row checkboxes so items added/changed later still work
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('select-item')) {
+            updateButtonStates();
+        }
+    });
+
+    // Initial state
+    updateButtonStates();
+
+    // --- Export to Excel Logic ---
+    if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', function() {
+            const selectedItemIds = Array.from(document.querySelectorAll('.select-item:checked')).map(input => input.value);
+            if (selectedItemIds.length === 0) {
+                showCustomConfirmModal('Please select at least one item to export.', () => {}, true);
+                return;
+            }
+            const url = `{% url "inventory:export_inventory" %}?item_ids=${selectedItemIds.join(',')}`;
+            window.location.href = url;
+        });
+    }
+
+    // --- Import Modal Logic ---
+    const importModalElement = document.getElementById('importModal');
+    const importFileTypeInput = document.getElementById('importFileType');
+    const importForm = document.getElementById('importForm');
+    let bsImportModal = null;
+    if (importModalElement) {
+        bsImportModal = new bootstrap.Modal(importModalElement);
+    }
+
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(event) {
+            const fileType = event.target.dataset.fileType;
+            importFileTypeInput.value = fileType;
+            if (bsImportModal) {
+                bsImportModal.show();
+            }
+        });
+    });
+
+    if (importForm) {
+        importForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevents the default form submission behavior
+
+            const file = document.getElementById('fileUpload').files[0];
+            const fileType = document.getElementById('importFileType').value;
+
+            if (!file) {
+                showCustomConfirmModal("Please select a file to upload.", () => {});
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('file_type', fileType);
+
+            // Disable the button to prevent multiple submissions
+            const uploadFileBtn = document.getElementById('uploadFileBtn');
+            uploadFileBtn.disabled = true;
+            uploadFileBtn.textContent = 'Uploading...';
+
+            // POST the file and file_type to your import URL using Fetch API
+            fetch('{% url "inventory:import_items_submit" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // If the server response is not okay, try to parse the error message
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `Server responded with status ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Check for success message or redirect URL from the server
+                showCustomConfirmModal(data.message || 'File uploaded successfully!', () => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    }
+                });
+            })
+            .catch(error => {
+                // Handle any network or server errors
+                console.error('Fetch error:', error);
+                showCustomConfirmModal('Error uploading file: ' + error.message, () => {});
+            })
+            .finally(() => {
+                // Re-enable the button regardless of success or failure
+                uploadFileBtn.disabled = false;
+                uploadFileBtn.textContent = 'Upload';
+            });
+        });
+    }
+
+    // --- Modify Asset Button Logic ---
+    if (modifyAssetBtn) {
+        modifyAssetBtn.addEventListener('click', function() {
+            const selectedCheckbox = document.querySelector('.select-item:checked');
+            if (selectedCheckbox) {
+                const itemId = selectedCheckbox.value;
+                window.location.href = `/inventory/edit/${itemId}/`;
+            } else {
+                alert('Please select an item to modify.');
+            }
+        });
+    }
+
+    // --- Delete Modal Logic (CLICK on Delete button: populate modal & show) ---
+    if (deleteAssetBtn) {
+        deleteAssetBtn.addEventListener('click', function () {
+            const checked = document.querySelectorAll('.select-item:checked');
+            deleteItemsBody.innerHTML = '';
+            const container = document.getElementById('selected_item_ids_container');
+            container.innerHTML = '';
+
+            if (checked.length === 0) {
+                showCustomConfirmModal('Please select at least one item to delete.', () => {});
+                return;
+            }
+
+            checked.forEach(cb => {
+                const row = cb.closest('tr');
+                const itemName = row ? (row.dataset.itemName || 'N/A') : 'N/A';
+                const uid = row ? (row.dataset.uid || 'N/A') : 'N/A';
+
+                // Add row in modal
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${escapeHtml(itemName)}</td><td>${escapeHtml(uid)}</td>`;
+                deleteItemsBody.appendChild(tr);
+
+                // Add hidden field for backend (multiple inputs with same name => getlist on server)
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'item_ids';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+
+            // Open modal (create a bootstrap modal instance)
+            const bsDeleteModal = new bootstrap.Modal(deleteBatchModalElement);
+            bsDeleteModal.show();
+        });
+    }
+
+    // Confirm Delete - validates reason, adds confirm flag and submits the modal form
+    if (confirmDeleteBatchBtn) {
+        confirmDeleteBatchBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const reasonInput = document.getElementById('id_reason');
+            const reason = reasonInput ? reasonInput.value.trim() : '';
+            if (!reason) {
+                alert('Please provide a reason for deletion.');
+                if (reasonInput) reasonInput.focus();
+                return;
+            }
+
+            // Add a hidden input 'confirm_delete' so your existing view will perform deletion
+            if (!deleteBatchFormModal.querySelector('input[name="confirm_delete"]')) {
+                const ci = document.createElement('input');
+                ci.type = 'hidden';
+                ci.name = 'confirm_delete';
+                ci.value = '1';
+                deleteBatchFormModal.appendChild(ci);
+            }
+
+            deleteBatchFormModal.submit();
+        });
+    }
+
+    // Helper: escape HTML to avoid XSS in injected table rows
+    function escapeHtml(unsafe) {
+        return String(unsafe)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+    }
+
+    // --- Custom Confirmation Modal Logic (Replaces native confirm/alert) ---
+    function showCustomConfirmModal(message, callback) {
+        const modalBody = document.getElementById('customConfirmModalBody');
+        const okBtn = document.getElementById('customConfirmOkBtn');
+        const cancelBtn = customConfirmModalElement.querySelector('[data-dismiss="modal"]');
+
+        if (!modalBody || !okBtn || !cancelBtn) {
+            alert(message);
+            if (callback) callback();
+            return;
+        }
+
+        modalBody.textContent = message;
+
+        const newOkBtn = okBtn.cloneNode(true);
+        okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+        newOkBtn.addEventListener('click', function() {
+            if (callback) {
+                callback();
+            }
+            if (bsCustomConfirmModal) {
+                bsCustomConfirmModal.hide();
+            }
+        });
+
+        newCancelBtn.addEventListener('click', function() {
+            if (bsCustomConfirmModal) {
+                bsCustomConfirmModal.hide();
+            }
+        });
+
+        if (bsCustomConfirmModal) {
+            bsCustomConfirmModal.show();
+        } else {
+            // create a temporary modal instance and show (fallback)
+            const tmp = new bootstrap.Modal(customConfirmModalElement);
+            tmp.show();
+        }
+    }
+
+    // --- Other Functionality (Modified/Transfer/Export buttons) ---
+    const usersDataElement = document.getElementById('user_data');
+    const locationsDataElement = document.getElementById('location_data');
+    const projectsDataElement = document.getElementById('project_data');
+
+    let allUsers = [];
+    let allLocations = [];
+    let allProjects = [];
+
+    function parseJsonData(elementId, variableName) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            const rawJson = element.textContent.trim();
+            if (rawJson.startsWith('{{') && rawJson.endsWith('}}')) {
+                console.error(`ERROR: Django variable '${variableName}' was not rendered.`);
+                return [];
+            } else {
+                try {
+                    return JSON.parse(rawJson);
+                } catch (e) {
+                    console.error(`Error parsing ${variableName} JSON:`, e);
+                    return [];
+                }
+            }
+        } else {
+            console.error(`Script tag (ID: ${elementId}) not found for ${variableName}!`);
+            return [];
+        }
+    }
+
+    allUsers = parseJsonData('user_data', 'users_json');
+    allLocations = parseJsonData('location_data', 'locations_json');
+    allProjects = parseJsonData('project_data', 'projects_json');
+
+    // Transfer Modal
+    const transferModalElement = document.getElementById('transferModal');
+    let bsTransferModal = null;
+    if (transferModalElement) {
+        bsTransferModal = new bootstrap.Modal(transferModalElement);
+    }
+    const transferItemsBody = document.getElementById('transferItemsBody');
+    const confirmTransferBtn = document.getElementById('confirmTransferBtn');
+
+    if (openTransferModalBtn) {
+        openTransferModalBtn.addEventListener('click', (event) => {
+            if (allLocations.length === 0) {
+                alert('No locations available for transfer. Please add locations in the Django admin first.');
+                event.stopPropagation();
+                return;
+            }
+            if (allUsers.length === 0) {
+                alert('No users available for owner assignment. Please add users in the Django admin first.');
+                event.stopPropagation();
+                return;
+            }
+
+            transferItemsBody.innerHTML = '';
+            const checkedCheckboxes = document.querySelectorAll('.select-item:checked');
+
+            if (checkedCheckboxes.length === 0) {
+                alert('Please select at least one item to transfer.');
+                return;
+            }
+
+            checkedCheckboxes.forEach(cb => {
+                const row = cb.closest('tr');
+                const id = row.dataset.itemId;
+                const name = row.dataset.itemName;
+                const sn = row.dataset.serialNumber;
+                const currLoc = row.dataset.currentLocation;
+                const currLocId = parseInt(row.dataset.currentLocationId);
+                const currProjId = parseInt(row.dataset.currentProjectId);
+                const currOwnerId = parseInt(row.dataset.currentOwnerId);
+
+                // ✅ Fetch the UID from the data attribute
+                const uid = row.dataset.uid;
+
+                const tr = document.createElement('tr');
+                tr.dataset.itemId = id;
+
+                let locationSelectOptions = `<option value="">Select Location</option>`;
+                locationSelectOptions += allLocations.map(loc => {
+                    const isSelected = (loc.id === currLocId) ? 'selected' : '';
+                    return `<option value="${loc.id}" ${isSelected}>${loc.name}</option>`;
+                }).join('');
+
+                let projectSelectOptions = `<option value="">Select Project</option>`;
+                projectSelectOptions += allProjects.map(proj => {
+                    const isSelected = (proj.id === currProjId) ? 'selected' : '';
+                    return `<option value="${proj.id}" ${isSelected}>${proj.name}</option>`;
+                }).join('');
+
+                let ownerSelectOptions = `<option value="">Select Owner</option>`;
+                ownerSelectOptions += allUsers.map(user => {
+                    const isSelected = (user.id === currOwnerId) ? 'selected' : '';
+                    return `<option value="${user.id}" ${isSelected}>${user.username}</option>`;
+                }).join('');
+
+
+                const transferDateToday = new Date().toISOString().slice(0, 10);
+
+                tr.innerHTML = `
+                    <td>${escapeHtml(name)}</td>
+                    <td>${escapeHtml(uid)}</td>
+                    <td>${escapeHtml(sn)}</td>
+                    <td>${escapeHtml(currLoc)}</td>
+                    <td>
+                        <select class="form-control" name="new_location_${id}" required>
+                            ${locationSelectOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-control" name="new_project_${id}">
+                            ${projectSelectOptions}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-control" name="new_owner_${id}">
+                            ${ownerSelectOptions}
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control" name="destination_poc_${id}" placeholder="Destination POC"></td>
+                    <td><input type="date" class="form-control" name="est_eta_${id}" value="${transferDateToday}"></td>
+                    <input type="hidden" name="item_ids" value="${id}">
+                `;
+                transferItemsBody.appendChild(tr);
+            });
+        });
+    }
+
+    if (confirmTransferBtn) {
+        confirmTransferBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const data = [];
+            let valid = true;
+
+            transferItemsBody.querySelectorAll('tr').forEach(tr => {
+                const itemId = tr.dataset.itemId;
+
+                const newLocationSelect = tr.querySelector(`select[name="new_location_${itemId}"]`);
+                const projectSelect = tr.querySelector(`select[name="new_project_${itemId}"]`);
+                const ownerSelect = tr.querySelector(`select[name="new_owner_${itemId}"]`);
+                const destinationPocInput = tr.querySelector(`input[name="destination_poc_${itemId}"]`);
+                const estEtaInput = tr.querySelector(`input[name="est_eta_${itemId}"]`);
+
+                if (!newLocationSelect || !newLocationSelect.value) {
+                    if (newLocationSelect) newLocationSelect.classList.add('is-invalid');
+                    valid = false;
+                    return;
+                } else {
+                    newLocationSelect.classList.remove('is-invalid');
+                }
+
+                data.push({
+                    id: itemId,
+                    new_location: newLocationSelect.value,
+                    project: projectSelect ? projectSelect.value : null,
+                    owner: ownerSelect ? ownerSelect.value : null,
+                    destination_poc: destinationPocInput ? destinationPocInput.value : '',
+                    est_eta: estEtaInput ? estEtaInput.value : '',
+                    transfer_date: estEtaInput ? estEtaInput.value : '' // reuse ETA as transfer date
+                });
+            });
+
+            if (!valid) {
+                showCustomConfirmModal("Please select new locations for all items before confirming transfer.", function() {});
+                return;
+            }
+
+            fetch('{% url "inventory:batch_transfer_items" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ items: data })
+            })
+            .then(resp => {
+                if (!resp.ok) {
+                    // If the response is not OK, try to parse it as JSON first.
+                    // If that fails, get the response as text.
+                    const contentType = resp.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return resp.json().then(err => {
+                            throw new Error(err.message || `Server error with status ${resp.status}`);
+                        });
+                    } else {
+                        return resp.text().then(textError => {
+                            throw new Error(textError || `Network response was not ok, status ${resp.status}`);
+                        });
+                    }
+                }
+                return resp.json();
+            })
+            .then(data => {
+                showCustomConfirmModal(data.message || "Transfer complete.", function() {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            })
+            .catch(err => {
+                showCustomConfirmModal("Error during transfer: " + err.message, function() {});
+            });
+        });
+    }
+
+    // -------------------
+    // SEARCH & HIGHLIGHT
+    // -------------------
+    // Find the search input inside your search form; support multiple renderers
+    function findSearchInput() {
+        const form = document.getElementById('searchForm');
+        if (!form) return null;
+        // try a number of selectors (widget_tweaks may produce different attributes)
+        let input = form.querySelector('input[name="search"]') ||
+                    form.querySelector('input[id*="search"]') ||
+                    form.querySelector('input[type="search"]') ||
+                    form.querySelector('input');
+        return input;
+    }
+
+    const searchInput = findSearchInput();
+    if (searchInput) {
+        // Ensure server receives it as 'search' parameter on submit
+        searchInput.name = 'search';
+        searchInput.id = searchInput.id || 'dashboardSearch';
+
+        // Highlight on input as user types (client-side highlight)
+        searchInput.addEventListener('input', function (e) {
+            highlightRows(e.target.value || '');
+        });
+
+        // If there's already a search query in the URL (server-side filtering), highlight the current rows
+        (function highlightFromQuery() {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('search') || searchInput.value || '';
+            if (q) {
+                searchInput.value = q;
+                highlightRows(q);
+            }
+        })();
+    }
+
+    function highlightRows(query) {
+        const q = String(query || '').trim().toLowerCase();
+        // Clear existing highlights
+        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('highlight-row'));
+
+        if (!q) return;
+
+        
+        document.querySelectorAll('tbody tr').forEach(tr => {
+            const name = (tr.dataset.itemName || '').toLowerCase();
+            const uid = (tr.dataset.uid || '').toLowerCase();
+            const sn = (tr.dataset.serialNumber || tr.dataset.serialnumber || '').toLowerCase();
+            // description is usually in the 8th column — fallback to checking text of row
+            const descCell = tr.querySelector('td:nth-child(8)');
+            const desc = descCell ? (descCell.textContent || '').toLowerCase() : (tr.textContent || '').toLowerCase();
+
+            if (name.includes(q) || uid.includes(q) || sn.includes(q) || desc.includes(q)) {
+                tr.classList.add('highlight-row');
+            }
+        });
+    }
+
+});
+</script>
+{% endblock %}

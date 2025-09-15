@@ -1,0 +1,167 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Add New Asset{% endblock %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-8 space-y-6 border border-gray-200">
+        <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Add New Asset</h2>
+            
+            <a href="{% url 'inventory:ocr_scan' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition duration-200 ease-in-out flex items-center space-x-2">
+                <i class="fas fa-camera text-lg"></i>
+                <span>Scan Invoice</span>
+            </a>
+        </div>
+        
+        {% include 'inventory/messages.html' %}
+
+        <form method="post" enctype="multipart/form-data" action="{% url 'inventory:add_item' %}" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- ✅ Invoice Number (only once, styled properly) -->
+                <div class="sm:col-span-2">
+                    <label for="{{ form.invoice_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Invoice Number:</label>
+                    {% render_field form.invoice_number class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_invoice_number" %}
+                    {% if form.invoice_number.errors %}
+                        <div class="text-red-500 text-xs mt-1">{{ form.invoice_number.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="{{ form.item_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Item name:</label>
+                    {% render_field form.item_name class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_item_name" %}
+                    {% if form.item_name.errors %}<div class="text-red-500 text-xs mt-1">{{ form.item_name.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Category:</label>
+                    {% render_field form.category class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_category" %}
+                    {% if form.category.errors %}<div class="text-red-500 text-xs mt-1">{{ form.category.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.serial_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Serial number:</label>
+                    {% render_field form.serial_number class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_serial_number" %}
+                    {% if form.serial_number.errors %}<div class="text-red-500 text-xs mt-1">{{ form.serial_number.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.quantity.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Quantity:</label>
+                    {% render_field form.quantity class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_quantity" %}
+                    {% if form.quantity.errors %}<div class="text-red-500 text-xs mt-1">{{ form.quantity.errors }}</div>{% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Location:</label>
+                    {% render_field form.location class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_location" %}
+                    {% if form.location.errors %}<div class="text-red-500 text-xs mt-1">{{ form.location.errors }}</div>{% endif %}
+                </div>
+                
+                <div>
+                    <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Status:</label>
+                    {% render_field form.status class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_status" %}
+                    {% if form.status.errors %}<div class="text-red-500 text-xs mt-1">{{ form.status.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Price:</label>
+                    {% render_field form.price class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_price" %}
+                    {% if form.price.errors %}<div class="text-red-500 text-xs mt-1">{{ form.price.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.project.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Project:</label>
+                    {% render_field form.project class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_project" %}
+                    {% if form.project.errors %}<div class="text-red-500 text-xs mt-1">{{ form.project.errors }}</div>{% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.tag.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">TAG:</label>
+                    {% render_field form.tag class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_tag" %}
+                    {% if form.tag.errors %}<div class="text-red-500 text-xs mt-1">{{ form.tag.errors }}</div>{% endif %}
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Description:</label>
+                    {% render_field form.description class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" rows="3" id="id_description" %}
+                    {% if form.description.errors %}<div class="text-red-500 text-xs mt-1">{{ form.description.errors }}</div>{% endif %}
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Image:</label>
+                    {% render_field form.image class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_image" %}
+                    {% if form.image.errors %}<div class="text-red-500 text-xs mt-1">{{ form.image.errors }}</div>{% endif %}
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="id_document_file_upload" class="block text-sm font-medium text-gray-700 mb-1">Upload Document:</label>
+                    <input type="file" name="document_file_upload" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_document_file_upload">
+                    {% if form.document_file_upload.errors %}<div class="text-red-500 text-xs mt-1">{{ form.document_file_upload.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <!-- Hidden hardware/software fields -->
+            <div id="hardware_software_fields" class="space-y-4 hidden">
+                <div id="cpu_row">
+                    <label for="{{ form.cpu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">CPU:</label>
+                    {% render_field form.cpu class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_cpu" %}
+                </div>
+                <div id="gpu_row">
+                    <label for="{{ form.gpu.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">GPU:</label>
+                    {% render_field form.gpu class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_gpu" %}
+                </div>
+                <div id="os_row">
+                    <label for="{{ form.os.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Operating System:</label>
+                    {% render_field form.os class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" id="id_os" %}
+                </div>
+                <div id="installed_software_row">
+                    <label for="{{ form.installed_software.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">Installed Software:</label>
+                    {% render_field form.installed_software class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" rows="3" id="id_installed_software" %}
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-between mt-6">
+                <button type="submit" class="w-full sm:w-auto flex justify-center py-2 px-6 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    Add Item
+                </button>
+                <a href="{% url 'inventory:group_view' %}" class="w-full sm:w-auto text-center py-2 px-6 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                    Group
+                </a>
+                <a href="{% url 'inventory:dashboard' %}" class="w-full sm:w-auto text-center mt-3 sm:mt-0 py-2 px-6 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors">
+                    Back to Dashboard
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.getElementById('id_category');
+        const hardwareSoftwareFieldsContainer = document.getElementById('hardware_software_fields');
+        const showForCategories = ['Laptop', 'Desktop', 'Server', 'Docking Station'];
+    
+        function toggleHardwareSoftwareFields() {
+            const selectedCategoryOption = categorySelect.options[categorySelect.selectedIndex];
+            const selectedCategoryText = selectedCategoryOption ? selectedCategoryOption.textContent.trim() : '';
+            if (showForCategories.includes(selectedCategoryText)) {
+                hardwareSoftwareFieldsContainer.classList.remove('hidden');
+            } else {
+                hardwareSoftwareFieldsContainer.classList.add('hidden');
+            }
+        }
+    
+        if (categorySelect) {
+            categorySelect.addEventListener('change', toggleHardwareSoftwareFields);
+            toggleHardwareSoftwareFields();
+        }
+    });
+</script>
+{% endblock %}

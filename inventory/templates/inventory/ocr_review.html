@@ -1,0 +1,112 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 text-white">Review Scanned Items</h5>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form id="save-form" method="post" action="{% url 'inventory:save_scanned_items' %}">
+                {% csrf_token %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Serial No.</th>
+                                <th>Category</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Project</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td><input type="text" name="items[{{ forloop.counter0 }}][description]" value="{{ item.description }}" class="form-control"></td>
+                                <td><input type="number" name="items[{{ forloop.counter0 }}][quantity]" value="{{ item.quantity }}" class="form-control" min="1"></td>
+                                <td><input type="number" name="items[{{ forloop.counter0 }}][price]" value="{{ item.price }}" class="form-control" step="0.01"></td>
+                                <td><input type="text" name="items[{{ forloop.counter0 }}][serial_number]" value="{{ item.serial_number }}" class="form-control"></td>
+                                <td>
+                                    <select name="items[{{ forloop.counter0 }}][category_id]" class="form-control" required>
+                                        <option value="">-- Select Category --</option>
+                                        {% for category in item_categories %}
+                                            <option value="{{ category.id }}" {% if category.id == item.category_id %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="items[{{ forloop.counter0 }}][location_id]" class="form-control" required>
+                                        <option value="">-- Select Location --</option>
+                                        {% for location in locations %}
+                                            <option value="{{ location.id }}" {% if location.id == item.location_id %}selected{% endif %}>{{ location.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="items[{{ forloop.counter0 }}][status_id]" class="form-control" required>
+                                        <option value="">-- Select Status --</option>
+                                        {% for status in statuses %}
+                                            <option value="{{ status.id }}" {% if status.id == item.status_id %}selected{% endif %}>{{ status.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="items[{{ forloop.counter0 }}][project_id]" class="form-control">
+                                        <option value="">-- Select Project --</option>
+                                        {% for project in projects %}
+                                            <option value="{{ project.id }}" {% if project.id == item.project_id %}selected{% endif %}>{{ project.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Confirm and Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelector('#save-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const form = this;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            redirect: 'follow'
+        })
+        .then(response => {
+            console.log('Form submission successful. Redirecting...');
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+        });
+    });
+</script>
+{% endblock %}

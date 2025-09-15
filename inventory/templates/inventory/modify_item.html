@@ -1,0 +1,47 @@
+{# inventory_management/inventory/templates/inventory/modify_item.html #}
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load widget_tweaks %} {# Ensure widget_tweaks is loaded for render_field #}
+
+{% block title %}{{ form_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 mx-auto" style="max-width: 500px;">
+        <h2 class="card-title text-center mb-4">{{ form_title }}</h2>
+
+        {# Django messages are now handled by the base.html, so this include might be redundant if base.html is used correctly #}
+        {# However, keeping it here for robustness if you have specific messages for this page not handled by base.html's global message display #}
+        {# If messages are showing twice, remove this line. #}
+        {% include 'inventory/messages.html' %} 
+
+        {# Form for searching an asset by UID or Serial Number #}
+        <form method="GET" action="{% url 'inventory:modify_item' %}" class="needs-validation" novalidate>
+            {% csrf_token %} {# Use Django's CSRF token tag #}
+
+            <div class="mb-3">
+                {# Render the single search_query field from your ModifyItemForm #}
+                {{ form.search_query.label_tag }}
+                {% render_field form.search_query class="form-control" placeholder="Enter UID or Serial Number" %}
+                {% if form.search_query.errors %}<div class="text-danger small">{{ form.search_query.errors }}</div>{% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mt-3">
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-info">Find Asset</button>
+                <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </form>
+
+        {# The 'found_items' block has been removed as the modify_item view either redirects #}
+        {# to the edit page or displays a message (success/error/warning) directly. #}
+        {# It does not typically render a list of items on this page. #}
+
+    </div>
+</div>
+{% endblock %}

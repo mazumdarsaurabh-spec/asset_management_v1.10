@@ -1,0 +1,162 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Item Details{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+<div class="card shadow-sm mx-auto" style="max-width: 600px;">
+<div class="card-header bg-info text-white text-center">
+<h4 class="mb-0">Item Details: {{ item.item_name }} ({{ item.uid_no }})</h4>
+</div>
+<div class="card-body">
+{% include 'inventory/messages.html' %} {# Include messages partial #}
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <tbody>
+                    <tr>
+                        <th scope="row">Item Name:</th>
+                        <td>{{ item.item_name }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">UID No.:</th>
+                        <td>{{ item.uid_no }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">DEVICE:</th>
+                        <td>
+                            {% if item.kits.all %}
+                                {% for kit in item.kits.all %}
+                                    <span class="badge bg-primary">{{ kit.name }}</span>
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Serial Number:</th>
+                        <td>{{ item.serial_number|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Category:</th>
+                        <td>{{ item.category.name|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Quantity:</th>
+                        <td>{{ item.quantity }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Location:</th>
+                        <td>{{ item.location.name|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Project:</th>
+                        <td>{{ item.project.name|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Status:</th>
+                        <td>
+                            <span class="badge 
+                                {% if item.status == 'Online' %}bg-success
+                                {% elif item.status == 'Offline' %}bg-danger
+                                {% elif item.status == 'Assigned' %}bg-info
+                                {% elif item.status == 'In Transit' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                    {{ item.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Description:</th>
+                        <td>{{ item.description|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">CPU:</th>
+                        <td>{{ item.cpu|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">GPU:</th>
+                        <td>{{ item.gpu|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">OS:</th>
+                        <td>{{ item.os|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Installed Software:</th>
+                        <td>{{ item.installed_software|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Owner:</th>
+                        <td>
+                            {% if item.status == "In Transit" and item.owner_poc %}
+                                In transit – {{ item.owner_poc }}
+                            {% else %}
+                                {{ item.created_by.username }}
+                            {% endif %}
+                        </td>
+                    </tr>
+
+
+
+
+                    <tr>
+                        <th scope="row">Created At:</th>
+                        <td>{{ item.created_at|date:"Y-m-d H:i:s" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Last Updated:</th>
+                        <td>{{ item.updated_at|date:"Y-m-d H:i:s" }}</td>
+                    </tr>
+                    <tr> 
+                        <th scope="row">Image:</th>
+                        <td>
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}"
+                                    alt="{{ item.item_name }}"
+                                    class="img-thumbnail"
+                                    style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'images/default_inventory.png' %}"
+                                    alt="No Image"
+                                    class="img-thumbnail"
+                                    style="width: 50px; height: 50px; object-fit: cover;">
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="mt-4">
+            <h5 class="border-bottom pb-2">Documents & Invoice</h5>
+            <p><strong>Invoice Number:</strong> {{ item.invoice_number|default:"N/A" }}</p>
+
+            <h6>Associated Documents:</h6>
+            {% if documents %}
+            <div class="list-group">
+                {% for doc in documents %}
+                <a href="{{ doc.file.url }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    {{ doc.tag.name }}
+                    <span class="badge bg-primary rounded-pill">View</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No additional documents found for this item.</p>
+            {% endif %}
+        </div>
+        
+        <div class="d-flex justify-content-center mt-3">
+            <a href="{% url 'inventory:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+</div>
+
+{% endblock %}
