@@ -20,3 +20,4 @@ xlwt==1.3.0
 whitenoise
 django-widget-tweaks==1.5
 django-crispy-forms==2.2
+PyMuPDF

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url # Import this for parsing the database URL
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,18 +22,21 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2(lc4r@%0mhm52@0he$_fq3!ni5u0s2s*oj5ovyaj(=)sz9-3r'
+# Use an environment variable for the secret key in production.
+# This prevents it from being exposed in your source code.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-2(lc4r@%0mhm52@0he$_fq3!ni5u0s2s*oj5ovyaj(=)sz9-3r')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True # This is correct
+# Automatically set DEBUG to False on Render.
+DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = [
     '.render.com',
-    'inventory-management-26.onrender.com', # Replace with your actual Render app URL
+    # Replace with your actual Render app URL, or use the wildcard above.
+    'inventory_management-26.onrender.com',
     '127.0.0.1',
     'localhost',
     '10.0.2.2',
-    'inventory-management-25.onrender.com',
 ]
 
 
@@ -52,10 +56,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Corrected: SessionMiddleware should generally come before WhiteNoise
-    # and certainly before AuthenticationMiddleware
-    'django.contrib.sessions.middleware.SessionMiddleware', # MOVED UP AND ADDED COMMA
-    'whitenoise.middleware.WhiteNoiseMiddleware', # ADDED COMMA HERE
+    # WhiteNoise must be first in the list for static file serving.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -69,7 +72,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         
-        'DIRS': [], # Your original setting
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Use a project-level templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,14 +89,19 @@ WSGI_APPLICATION = 'inventory_management.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR,'db.sqlite3'),
+# Use PostgreSQL on Render and SQLite for local development.
+# The `DATABASE_URL` environment variable is automatically provided by Render.
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR,'db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -138,16 +146,21 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-
+# Collect static files into this directory.
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Use WhiteNoise to serve compressed static files efficiently.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
+# Look for static files in these locations.
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'inventory', 'static'), # Assuming your project has a top-level 'static' folder
-    # If your app has its own static folder (e.g., inventory/static), Django finds it automatically
-    #   os.path.join(BASE_DIR, 'inventory_management', 'inventory', 'static'),  
+    # Assumes a top-level `static` directory for project-wide assets.
+    os.path.join(BASE_DIR, 'static'),
 ]
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-GEMINI_API_KEY = "AIzaSyD3VjZQwabFKgBzSfu8T9P15YkSdRUM78U"
+
+# Use an environment variable for the Gemini API key for security.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
