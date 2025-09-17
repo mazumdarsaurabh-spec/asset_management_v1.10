@@ -33,10 +33,10 @@ DEBUG = 'RENDER' not in os.environ
 ALLOWED_HOSTS = [
     '.render.com',
     # Replace with your actual Render app URL, or use the wildcard above.
-    'inventory_management-26.onrender.com',
+    'inventory_management-v1.10-2.onrender.com',
     '127.0.0.1',
     'localhost',
-    '10.0.2.2',
+    
 ]
 
 
