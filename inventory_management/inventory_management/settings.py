@@ -18,12 +18,12 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "asset-management-v1-4-10.onrender.com,localhost,127.0.0.1"
+    ".onrender.com,localhost,127.0.0.1"
 ).split(",")
 
 CSRF_TRUSTED_ORIGINS = os.environ.get(
     "CSRF_TRUSTED_ORIGINS",
-    "https://asset-management-v1-4-10.onrender.com"
+    "https://*.onrender.com"
 ).split(",")
 
 # Application definition
