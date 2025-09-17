@@ -18,7 +18,7 @@ DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    ".onrender.com,localhost,127.0.0.1"
+    "asset_management_v1.10-2.onrender.com,localhost,127.0.0.1"
 ).split(",")
 
 CSRF_TRUSTED_ORIGINS = os.environ.get(
